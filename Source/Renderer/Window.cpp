@@ -9,10 +9,6 @@
 ParticleSimulator::Window::Window(QWindow* parent)
     : QOpenGLWindow(QOpenGLWindow::UpdateBehavior::NoPartialUpdate, parent)
 {
-    QSurfaceFormat format = QSurfaceFormat::defaultFormat();
-    format.setSamples(4);
-    setFormat(format);
-
     connect(this, &QOpenGLWindow::frameSwapped, [=]() { update(); });
 }
 

@@ -43,7 +43,7 @@ void ParticleSimulator::Renderer::Run()
 void ParticleSimulator::Renderer::Initialize()
 {
     initializeOpenGLFunctions();
-    glEnable(GL_MULTISAMPLE);
+    glDisable(GL_MULTISAMPLE);
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glEnable(GL_BLEND);
