@@ -42,9 +42,9 @@ namespace ParticleSimulator
         Shader* mPointCloudShader;
 
         int mCurrentNumberOfParticles{ MAX_NUMBER_OF_PARTICLES };
-        float mSpeed{1.0f};
-        
-        static constexpr int MAX_NUMBER_OF_PARTICLES{ 1'000'000 };
+        float mSpeed{ 1.0f };
+
+        static constexpr int MAX_NUMBER_OF_PARTICLES{ 10'000'000 };
         static constexpr int NUMBER_OF_ATTRACTORS{ 8 };
     };
 }
