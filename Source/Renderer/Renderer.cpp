@@ -46,7 +46,9 @@ void ParticleSimulator::Renderer::Initialize()
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
-
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+    
     mParticleSimulation = new ParticleSimulation(MAX_NUMBER_OF_PARTICLES, NUMBER_OF_ATTRACTORS);
 
     mPointCloudShader = new Shader("Point Cloud Shader");
