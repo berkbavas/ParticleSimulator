@@ -15,8 +15,6 @@ ParticleSimulator::Renderer::Renderer(QObject *parent)
     mWindow = new Window;
     mCamera = new FreeCamera;
 
-
-
     connect(mWindow, &Window::Initialize, this, &Renderer::Initialize);
     connect(mWindow, &Window::Render, this, &Renderer::Render);
     connect(mWindow, &Window::Resize, this, &Renderer::Resize);
@@ -47,8 +45,9 @@ void ParticleSimulator::Renderer::Initialize()
     initializeOpenGLFunctions();
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
 
-    mParticleSimulation = new ParticleSimulation(100'000);
+    mParticleSimulation = new ParticleSimulation(500'000, 8);
 
     mPointCloudShader = new Shader("Point Cloud Shader");
     mPointCloudShader->AddPath(QOpenGLShader::Vertex, ":/Resources/Shaders/PointCloud.vert");
@@ -71,11 +70,12 @@ void ParticleSimulator::Renderer::Render(float ifps)
 {
     mCamera->Update(ifps);
 
+    mParticleSimulation->Update(ifps);
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, mWidth, mHeight);
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 
     mPointCloudShader->Bind();
     mPointCloudShader->SetUniformValue("VP", mCamera->GetViewProjectionMatrix());
@@ -84,7 +84,6 @@ void ParticleSimulator::Renderer::Render(float ifps)
     glDrawArrays(GL_POINTS, 0, mParticleSimulation->GetNumberOfParticles());
 
     mPointCloudShader->Release();
-
 
     QtImGui::newFrame();
 
