@@ -47,7 +47,7 @@ void ParticleSimulator::Renderer::Initialize()
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
 
-    mParticleSimulation = new ParticleSimulation(500'000, 8);
+    mParticleSimulation = new ParticleSimulation(MAX_NUMBER_OF_PARTICLES, NUMBER_OF_ATTRACTORS);
 
     mPointCloudShader = new Shader("Point Cloud Shader");
     mPointCloudShader->AddPath(QOpenGLShader::Vertex, ":/Resources/Shaders/PointCloud.vert");
@@ -55,6 +55,8 @@ void ParticleSimulator::Renderer::Initialize()
     mPointCloudShader->Initialize();
 
     QtImGui::initialize(mWindow, true);
+
+    mCamera->SetPosition(0, 0, 200);
 }
 
 void ParticleSimulator::Renderer::Resize(int width, int height)
@@ -70,7 +72,7 @@ void ParticleSimulator::Renderer::Render(float ifps)
 {
     mCamera->Update(ifps);
 
-    mParticleSimulation->Update(ifps);
+    mParticleSimulation->Update(ifps * mSpeed);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, mWidth, mHeight);
@@ -81,13 +83,15 @@ void ParticleSimulator::Renderer::Render(float ifps)
     mPointCloudShader->SetUniformValue("VP", mCamera->GetViewProjectionMatrix());
 
     glBindVertexArray(mParticleSimulation->GetVertexArrayObject());
-    glDrawArrays(GL_POINTS, 0, mParticleSimulation->GetNumberOfParticles());
+    glDrawArrays(GL_POINTS, 0, mCurrentNumberOfParticles);
 
     mPointCloudShader->Release();
 
     QtImGui::newFrame();
 
     ImGui::Begin("Debug");
+    ImGui::SliderInt("Number Of Particles", &mCurrentNumberOfParticles, 0, MAX_NUMBER_OF_PARTICLES);
+    ImGui::SliderFloat("Speed", &mSpeed, 0.001f, 1.0f);
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::End();
 

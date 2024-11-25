@@ -45,7 +45,7 @@ namespace ParticleSimulator
 
         DEFINE_MEMBER(float, ZNear, 0.01f);
         DEFINE_MEMBER(float, ZFar, 100000.0f);
-        DEFINE_MEMBER(float, VerticalFov, 60.0f);
+        DEFINE_MEMBER(float, VerticalFov, 90.0f);
 
         DEFINE_MEMBER(float, LinearSpeed, 1.0f);
         DEFINE_MEMBER(float, LinearSpeedMultiplier, 1.0f);

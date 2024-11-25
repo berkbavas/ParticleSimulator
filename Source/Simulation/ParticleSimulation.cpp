@@ -18,11 +18,6 @@ void ParticleSimulator::ParticleSimulation::Update(float ifps)
 {
     mTime += ifps;
 
-    if(mTime > 100.0f)
-    {
-        mTime = 0.0f;
-    }
-
     UpdateAttractors();
     UpdateParticles(ifps);
 }
@@ -65,17 +60,17 @@ void ParticleSimulator::ParticleSimulation::GenerateGeometries()
 
     for (auto& position : mPositions)
     {
-        const float x = Math::GenerateRandom(-40, 40);
-        const float y = Math::GenerateRandom(-40, 40);
-        const float z = Math::GenerateRandom(-40, 40);
+        const float x = Math::GenerateRandom(-20, 20);
+        const float y = Math::GenerateRandom(-20, 20);
+        const float z = Math::GenerateRandom(-20, 20);
         position = QVector3D(x, y, z);
     }
 
     for (auto& velocity : mVelocities)
     {
-        const float x = Math::GenerateRandom(-0.1f, 0.1f);
-        const float y = Math::GenerateRandom(-0.1f, 0.1f);
-        const float z = Math::GenerateRandom(-0.1f, 0.1f);
+        const float x = Math::GenerateRandom(-0.01f, 0.01f);
+        const float y = Math::GenerateRandom(-0.01f, 0.01f);
+        const float z = Math::GenerateRandom(-0.01f, 0.01f);
         velocity = QVector3D(x, y, z);
     }
 

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Node/FreeCamera.h"
-#include "Simulation/ParticleSimulation.h"
 #include "Renderer/Shader.h"
 #include "Renderer/Window.h"
+#include "Simulation/ParticleSimulation.h"
 
 #include <QMouseEvent>
 #include <QObject>
@@ -40,5 +40,11 @@ namespace ParticleSimulator
 
         ParticleSimulation* mParticleSimulation;
         Shader* mPointCloudShader;
+
+        int mCurrentNumberOfParticles{ MAX_NUMBER_OF_PARTICLES };
+        float mSpeed{1.0f};
+        
+        static constexpr int MAX_NUMBER_OF_PARTICLES{ 1'000'000 };
+        static constexpr int NUMBER_OF_ATTRACTORS{ 8 };
     };
 }

@@ -76,7 +76,7 @@ void ParticleSimulator::FreeCamera::Update(float ifps)
     {
         if (mPressedKeys[Qt::Key_Space])
         {
-            mLinearSpeed = 10.0f;
+            mLinearSpeed = 50.0f;
         }
         else if (mPressedKeys[Qt::Key_Shift])
         {
