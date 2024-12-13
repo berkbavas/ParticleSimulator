@@ -17,4 +17,4 @@ This project is a `Qt` port of Maurice Tollmien's work [here](https://github.com
 
 ## Video
 
-https://github.com/user-attachments/assets/0bba058a-4b6a-44d7-85af-2391a5c88851
+https://github.com/user-attachments/assets/11a21376-13ed-479b-be01-9ff8b7dcc2a9
