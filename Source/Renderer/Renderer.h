@@ -7,11 +7,11 @@
 
 #include <QMouseEvent>
 #include <QObject>
-#include <QOpenGLExtraFunctions>
+#include <QOpenGLFunctions_4_3_Core>
 
 namespace ParticleSimulator
 {
-    class Renderer : public QObject, protected QOpenGLExtraFunctions
+    class Renderer : public QObject, protected QOpenGLFunctions_4_3_Core
     {
       public:
         Renderer(QObject* parent = nullptr);
@@ -45,6 +45,6 @@ namespace ParticleSimulator
         float mSpeed{ 1.0f };
 
         static constexpr int MAX_NUMBER_OF_PARTICLES{ 10'000'000 };
-        static constexpr int NUMBER_OF_ATTRACTORS{ 8 };
+        static constexpr int NUMBER_OF_ATTRACTORS{ 32 };
     };
 }

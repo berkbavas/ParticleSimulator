@@ -46,8 +46,6 @@ void ParticleSimulator::Renderer::Initialize()
     glDisable(GL_MULTISAMPLE);
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
     
     mParticleSimulation = new ParticleSimulation(MAX_NUMBER_OF_PARTICLES, NUMBER_OF_ATTRACTORS);
 
@@ -58,7 +56,7 @@ void ParticleSimulator::Renderer::Initialize()
 
     QtImGui::initialize(mWindow, true);
 
-    mCamera->SetPosition(0, 0, 200);
+    mCamera->SetPosition(0, 0, 10);
 }
 
 void ParticleSimulator::Renderer::Resize(int width, int height)
@@ -81,9 +79,12 @@ void ParticleSimulator::Renderer::Render(float ifps)
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
     mPointCloudShader->Bind();
     mPointCloudShader->SetUniformValue("VP", mCamera->GetViewProjectionMatrix());
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
     glBindVertexArray(mParticleSimulation->GetVertexArrayObject());
     glDrawArrays(GL_POINTS, 0, mCurrentNumberOfParticles);
 
@@ -93,7 +94,7 @@ void ParticleSimulator::Renderer::Render(float ifps)
 
     ImGui::Begin("Debug");
     ImGui::SliderInt("Number Of Particles", &mCurrentNumberOfParticles, 0, MAX_NUMBER_OF_PARTICLES);
-    ImGui::SliderFloat("Speed", &mSpeed, 0.001f, 1.0f);
+    ImGui::SliderFloat("Speed", &mSpeed, 0.001f, 100.0f);
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::End();
 

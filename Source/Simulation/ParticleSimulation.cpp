@@ -8,20 +8,11 @@ ParticleSimulator::ParticleSimulation::ParticleSimulation(size_t nParticles, siz
 {
     GenerateGeometries();
     InitializeOpenGLStuff();
-
-    mParticleSimulationShader = new Shader("Particle Simulation Shader");
-    mParticleSimulationShader->AddPath(QOpenGLShader::Compute, ":/Resources/Shaders/ParticleSimulation.comp");
-    mParticleSimulationShader->Initialize();
 }
 
 void ParticleSimulator::ParticleSimulation::Update(float ifps)
 {
     mTime += ifps;
-
-    if(mTime > 10.0f)
-    {
-        mTime = 0.0f;
-    }
 
     UpdateAttractors();
     UpdateParticles(ifps);
@@ -31,15 +22,15 @@ void ParticleSimulator::ParticleSimulation::UpdateAttractors()
 {
     for (int i = 0; i < mNumberOfAttractors; ++i)
     {
-        const float x = std::sinf(mTime) * Math::GenerateRandom(-25, 25);
-        const float y = std::cosf(mTime) * Math::GenerateRandom(-25, 25);
-        const float z = std::tanf(mTime);
+        const float x = std::sinf(mTime * (float) (i + 4) * 7.5f * 20.0f) * 50.0f;
+        const float y = std::cosf(mTime * (float) (i + 7) * 3.9f * 20.0f) * 50.0f;
+        const float z = std::sinf(mTime * (float) (i + 3) * 5.3f * 20.0f) * std::cosf(mTime * (float) (i + 5) * 9.1f) * 100.0f;
 
-        mAttractors[i] = QVector3D(x, y, z);
+        mAttractors[i] = QVector4D(x, y, z, 1);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, mAttractorsVertexBuffer);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, mNumberOfAttractors * sizeof(QVector3D), mAttractors.data());
+    glBufferSubData(GL_ARRAY_BUFFER, 0, mNumberOfAttractors * sizeof(QVector4D), mAttractors.data());
 }
 
 void ParticleSimulator::ParticleSimulation::UpdateParticles(float ifps)
@@ -65,47 +56,48 @@ void ParticleSimulator::ParticleSimulation::GenerateGeometries()
 
     for (auto& position : mPositions)
     {
-        const float x = Math::GenerateRandom(-2, 2);
-        const float y = Math::GenerateRandom(-2, 2);
-        const float z = Math::GenerateRandom(-2, 2);
-        position = QVector3D(x, y, z);
+        const float x = Math::GenerateRandom(-1, 1);
+        const float y = Math::GenerateRandom(-1, 1);
+        const float z = Math::GenerateRandom(-1, 1);
+        position = mMaxDistance * QVector4D(x, y, z, 1);
     }
 
     for (auto& velocity : mVelocities)
     {
-        const float x = Math::GenerateRandom(-0.1f, 0.1f);
-        const float y = Math::GenerateRandom(-0.1f, 0.1f);
-        const float z = Math::GenerateRandom(-0.1f, 0.1f);
-        velocity = QVector3D(x, y, z);
+        const float x = Math::GenerateRandom(-1, 1);
+        const float y = Math::GenerateRandom(-1, 1);
+        const float z = Math::GenerateRandom(-1, 1);
+        velocity = mMaxSpeed * QVector4D(x, y, z, 1);
     }
 
     for (auto& life : mLifes)
     {
-        life = Math::GenerateRandom(0, 1);
+        life = mMaxLife * Math::GenerateRandom(0, 1);
     }
 
     for (auto& attractor : mAttractors)
     {
-        const float x = Math::GenerateRandom(-15, 15);
-        const float y = Math::GenerateRandom(-15, 15);
-        const float z = Math::GenerateRandom(-15, 15);
-        attractor = QVector3D(x, y, z);
+        attractor = QVector4D(0, 0, 0, 1);
     }
 }
 
 void ParticleSimulator::ParticleSimulation::InitializeOpenGLStuff()
 {
+    mParticleSimulationShader = new Shader("Particle Simulation Shader");
+    mParticleSimulationShader->AddPath(QOpenGLShader::Compute, ":/Resources/Shaders/ParticleSimulation.comp");
+    mParticleSimulationShader->Initialize();
+
     initializeOpenGLFunctions();
 
     // Position
     glGenBuffers(1, &mPositionVertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, mPositionVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, mPositions.size() * sizeof(QVector3D), mPositions.data(), GL_DYNAMIC_COPY);
+    glBufferData(GL_ARRAY_BUFFER, mPositions.size() * sizeof(QVector4D), mPositions.data(), GL_DYNAMIC_COPY);
 
     // Velocities
     glGenBuffers(1, &mVelocityVertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, mVelocityVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, mVelocities.size() * sizeof(QVector3D), mVelocities.data(), GL_DYNAMIC_COPY);
+    glBufferData(GL_ARRAY_BUFFER, mVelocities.size() * sizeof(QVector4D), mVelocities.data(), GL_DYNAMIC_COPY);
 
     // Life
     glGenBuffers(1, &mLifeVertexBuffer);
@@ -115,7 +107,7 @@ void ParticleSimulator::ParticleSimulation::InitializeOpenGLStuff()
     // Attractors
     glGenBuffers(1, &mAttractorsVertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, mAttractorsVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, mAttractors.size() * sizeof(QVector3D), mAttractors.data(), GL_DYNAMIC_COPY);
+    glBufferData(GL_ARRAY_BUFFER, mAttractors.size() * sizeof(QVector4D), mAttractors.data(), GL_DYNAMIC_COPY);
 
     /// Rendering
     glGenVertexArrays(1, &mVertexArrayObject);
@@ -123,7 +115,7 @@ void ParticleSimulator::ParticleSimulation::InitializeOpenGLStuff()
 
     /// Position
     glBindBuffer(GL_ARRAY_BUFFER, mPositionVertexBuffer);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(QVector3D), (void*) 0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(QVector4D), (void*) 0);
     glEnableVertexAttribArray(0);
 
     /// Life

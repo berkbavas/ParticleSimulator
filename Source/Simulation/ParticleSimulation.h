@@ -33,12 +33,15 @@ namespace ParticleSimulator
 
         DEFINE_MEMBER_CONST(size_t, NumberOfParticles, 0);
         DEFINE_MEMBER_CONST(size_t, NumberOfAttractors, 0);
+        DEFINE_MEMBER_CONST(float, MaxLife, 1.0f);
+        DEFINE_MEMBER_CONST(float, MaxSpeed, 0.1f);
+        DEFINE_MEMBER_CONST(float, MaxDistance, 10.0f);
 
-        QVector<QVector3D> mPositions;
-        QVector<QVector3D> mVelocities;
+        QVector<QVector4D> mPositions;
+        QVector<QVector4D> mVelocities;
         QVector<float> mLifes;
 
-        QVector<QVector3D> mAttractors;
+        QVector<QVector4D> mAttractors;
 
         float mTime{ 0.0f };
     };
