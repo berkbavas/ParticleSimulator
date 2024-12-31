@@ -85,7 +85,7 @@ void ParticleSimulator::Renderer::Render(float ifps)
     mPointCloudShader->SetUniformValue("ambientFactor", mAmbientFactor);
     mPointCloudShader->SetUniformValue("diffuseFactor", mDiffuseFactor);
     mPointCloudShader->SetUniformValue("colorMultiplier", mColorMultiplier);
-    mPointCloudShader->SetUniformValue("lightDirection", -mCamera->GetViewDirection());
+    mPointCloudShader->SetUniformValue("lightDirection", mCamera->GetViewDirection());
 
     // glEnable(GL_BLEND);
     // glBlendFunc(GL_ONE, GL_ONE);

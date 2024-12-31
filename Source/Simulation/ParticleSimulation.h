@@ -36,9 +36,9 @@ namespace ParticleSimulator
         DEFINE_MEMBER_CONST(size_t, NumberOfParticles, MAX_NUMBER_OF_PARTICLES);
         DEFINE_MEMBER_CONST(size_t, NumberOfAttractors, NUMBER_OF_ATTRACTORS);
         DEFINE_MEMBER_CONST(float, MaxSpeed, 0.1f);
-        DEFINE_MEMBER_CONST(float, MaxDistance, 3.0f);
+        DEFINE_MEMBER(float, MaxDistance, 3.0f);
 
-        DEFINE_MEMBER(bool, ApplyAttractionForce, false);
+        DEFINE_MEMBER(bool, ApplyAttractionForce, true);
 
         QVector<QVector4D> mInitialPositions;
         QVector<QVector4D> mPositions;

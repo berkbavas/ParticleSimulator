@@ -16,7 +16,7 @@ void main()
 {
     vec4 modelColor = mix(vec4(1), vec4(1, 0, 0, 1), fsDistance * colorMultiplier);
 
-    float diffuseStrength = max(dot(fsNormal, lightDirection), 0.0f);
+    float diffuseStrength = max(dot(fsNormal, -lightDirection), 0.0f);
 
     vec4 result = (ambientFactor + diffuseFactor * diffuseStrength) * lightColor * modelColor;
     outColor = vec4(result.rgb, 1.0f);
