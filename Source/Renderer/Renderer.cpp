@@ -46,8 +46,8 @@ void ParticleSimulator::Renderer::Initialize()
     glDisable(GL_MULTISAMPLE);
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
-    
-    mParticleSimulation = new ParticleSimulation(MAX_NUMBER_OF_PARTICLES, NUMBER_OF_ATTRACTORS);
+
+    mParticleSimulation = new ParticleSimulation;
 
     mPointCloudShader = new Shader("Point Cloud Shader");
     mPointCloudShader->AddPath(QOpenGLShader::Vertex, ":/Resources/Shaders/PointCloud.vert");
@@ -79,22 +79,32 @@ void ParticleSimulator::Renderer::Render(float ifps)
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
     mPointCloudShader->Bind();
     mPointCloudShader->SetUniformValue("VP", mCamera->GetViewProjectionMatrix());
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
+    mPointCloudShader->SetUniformValue("ambientFactor", mAmbientFactor);
+    mPointCloudShader->SetUniformValue("diffuseFactor", mDiffuseFactor);
+    mPointCloudShader->SetUniformValue("colorMultiplier", mColorMultiplier);
+    mPointCloudShader->SetUniformValue("lightDirection", -mCamera->GetViewDirection());
+
+    // glEnable(GL_BLEND);
+    // glBlendFunc(GL_ONE, GL_ONE);
     glBindVertexArray(mParticleSimulation->GetVertexArrayObject());
-    glDrawArrays(GL_POINTS, 0, mCurrentNumberOfParticles);
+    glDrawArrays(GL_POINTS, 0, mParticleSimulation->GetNumberOfParticles());
 
     mPointCloudShader->Release();
 
     QtImGui::newFrame();
 
     ImGui::Begin("Debug");
-    ImGui::SliderInt("Number Of Particles", &mCurrentNumberOfParticles, 0, MAX_NUMBER_OF_PARTICLES);
     ImGui::SliderFloat("Speed", &mSpeed, 0.001f, 100.0f);
+
+    ImGui::SliderFloat("Ambient", &mAmbientFactor, 0.00f, 1.00f);
+    ImGui::SliderFloat("Diffuse", &mDiffuseFactor, 0.00f, 1.00f);
+    ImGui::SliderFloat("Color Multiplier", &mColorMultiplier, 0.00f, 1.00f);
+
+    ImGui::Checkbox("Apply Attraction Force", &mParticleSimulation->GetApplyAttractionForce_NonConst());
+
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::End();
 

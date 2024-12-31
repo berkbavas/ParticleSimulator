@@ -2,27 +2,28 @@
 
 layout(local_size_x = 128) in;
 
-layout(std430, binding = 0) buffer PositionBuffer
+layout(std430, binding = 0) buffer InitialPositionBuffer
+{
+    vec4 initialPositions[];
+};
+
+layout(std430, binding = 1) buffer PositionBuffer
 {
     vec4 positions[];
 };
 
-layout(std430, binding = 1) buffer VelocityBuffer
+layout(std430, binding = 2) buffer VelocityBuffer
 {
     vec4 velocities[];
 };
 
-layout(std430, binding = 2) buffer AttractorBuffer
+layout(std430, binding = 3) buffer AttractorBuffer
 {
     vec4 attractors[];
 };
 
-layout(std430, binding = 3) buffer LifeBuffer
-{
-    float lifes[];
-};
-
 uniform float dt;
+uniform bool applyAttractionForce;
 uniform int numberOfAttractors;
 
 // A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
@@ -82,47 +83,44 @@ float random(vec4 v)
     return floatConstruct(hash(floatBitsToUint(v)));
 }
 
-vec3 calcForceFor(vec3 forcePoint, vec3 pos)
-{
-    // Force:
-    float gauss = 10000.0;
-    float e = 2.71828183;
-    float k_weak = 1.0;
-    vec3 dir = forcePoint - pos.xyz;
-    float g = pow(e, -pow(length(dir), 2) / gauss);
-    vec3 f = normalize(dir) * k_weak * (1 + mod(random(dir.xy), 10) - mod(random(dir.yz), 10)) / 10.0 * g;
-    return f;
-}
-
 void main(void)
 {
     uint index = gl_GlobalInvocationID.x;
 
     // Read the current position and velocity from the buffers
+    vec3 initialPosition = initialPositions[index].xyz;
     vec3 velocity = velocities[index].xyz;
     vec3 position = positions[index].xyz;
-    float life = lifes[index];
 
     // Update position using current velocity * time
-    position += velocity * dt;
-    life -= 0.0001f * dt;
 
-    for (int i = 0; i < numberOfAttractors; i++)
+    if (applyAttractionForce)
+    {
+        position += velocity * dt;
+
+        for (int i = 0; i < numberOfAttractors; i++)
+        {
+            // Calculate force and update velocity accordingly
+            vec3 delta = attractors[i].xyz - position;
+            velocity += dt * dt * normalize(delta) / (dot(delta, delta) + 10.0);
+        }
+    }
+    else
     {
         // Calculate force and update velocity accordingly
-        vec3 dist = (attractors[i].xyz - position);
-        velocity += dt * dt * normalize(dist) / (dot(dist, dist) + 10.0);
-    }
+        vec3 delta = initialPosition - position;
+        velocity = delta / 7.0f;
 
-    if (life <= 0.0)
-    {
-        position = -position * 0.01;
-        velocity *= 0.01;
-        life += 1.0f;
+        position += velocity * dt;
+
+        if (length(delta) < 0.01f)
+        {
+            position = initialPosition;
+            velocity = vec3(0);
+        }
     }
 
     // Store the new position and velocity back into the buffers
     velocities[index] = vec4(velocity, 1);
     positions[index] = vec4(position, 1);
-    lifes[index] = life;
 }

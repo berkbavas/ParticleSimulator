@@ -1,14 +1,17 @@
 #version 430 core
 
-layout(location = 0) in vec3 position;
-layout(location = 1) in float life;
+layout(location = 0) in vec4 position;
+layout(location = 1) in vec4 initialPosition;
+layout(location = 1) in vec4 normal;
 
 uniform mat4 VP; // View-Projection Matrix
 
-out float fsLife;
+out vec3 fsNormal;
+out float fsDistance;
 
 void main()
 {
-    fsLife = life;
-    gl_Position = VP * vec4(position, 1.0f);
+    fsDistance = distance(position.xyz, initialPosition.xyz);
+    fsNormal = normal.xyz;
+    gl_Position = VP * vec4(position.xyz, 1.0f);
 }
