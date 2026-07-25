@@ -1,0 +1,453 @@
+#version 430 core
+
+layout(local_size_x = 128) in;
+
+layout(std430, binding = 0) buffer InitialPositionBuffer
+{
+    vec4 InitialPositions[];
+};
+
+layout(std430, binding = 1) buffer PositionBuffer
+{
+    vec4 Positions[];
+};
+
+layout(std430, binding = 2) buffer VelocityBuffer
+{
+    vec4 Velocities[];
+};
+
+layout(std430, binding = 3) buffer AttractorBuffer
+{
+    vec4 Attractors[];
+};
+
+layout(std430, binding = 4) buffer ParticleDataBuffer
+{
+    vec4 ParticleData[]; // x: age, y: maxAge, z: size, w: type
+};
+
+uniform float uDt;
+uniform float uTime;
+uniform bool uApplyAttractionForce;
+uniform int uNumberOfAttractors;
+
+uniform float uGravity;
+uniform float uDamping;
+uniform float uTurbulenceStrength;
+uniform float uVortexStrength;
+uniform float uRepulsionStrength;
+uniform float uAttractionStrength;
+uniform float uBoundarySize;
+uniform float uBoundaryBounciness;
+
+uniform bool uEnableGravity;
+uniform bool uEnableTurbulence;
+uniform bool uEnableVortex;
+uniform bool uEnableBoundary;
+uniform int uSimulationMode;
+
+const int MODE_ATTRACTION = 0;
+const int MODE_VORTEX = 1;
+const int MODE_EXPLOSION = 2;
+const int MODE_GALAXY = 3;
+const int MODE_FLUID = 4;
+const int MODE_FIREWORKS = 5;
+const int MODE_SWARM = 6;
+const int MODE_BLACKHOLE = 7;
+
+uint Hash(uint X)
+{
+    X += (X << 10u);
+    X ^= (X >> 6u);
+    X += (X << 3u);
+    X ^= (X >> 11u);
+    X += (X << 15u);
+    return X;
+}
+
+uint Hash(uvec2 V)
+{
+    return Hash(V.x ^ Hash(V.y));
+}
+
+uint Hash(uvec3 V)
+{
+    return Hash(V.x ^ Hash(V.y) ^ Hash(V.z));
+}
+
+uint Hash(uvec4 V)
+{
+    return Hash(V.x ^ Hash(V.y) ^ Hash(V.z) ^ Hash(V.w));
+}
+
+float FloatConstruct(uint M)
+{
+    const uint IeeeMantissa = 0x007FFFFFu;
+    const uint IeeeOne = 0x3F800000u;
+    M &= IeeeMantissa;
+    M |= IeeeOne;
+    float F = uintBitsToFloat(M);
+    return F - 1.0;
+}
+
+float Random(float X)
+{
+    return FloatConstruct(Hash(floatBitsToUint(X)));
+}
+
+float Random(vec2 V)
+{
+    return FloatConstruct(Hash(floatBitsToUint(V)));
+}
+
+float Random(vec3 V)
+{
+    return FloatConstruct(Hash(floatBitsToUint(V)));
+}
+
+float Random(vec4 V)
+{
+    return FloatConstruct(Hash(floatBitsToUint(V)));
+}
+
+vec3 Mod289(vec3 X)
+{
+    return X - floor(X * (1.0 / 289.0)) * 289.0;
+}
+
+vec4 Mod289(vec4 X)
+{
+    return X - floor(X * (1.0 / 289.0)) * 289.0;
+}
+
+vec4 Permute(vec4 X)
+{
+    return Mod289(((X * 34.0) + 1.0) * X);
+}
+
+vec4 TaylorInvSqrt(vec4 R)
+{
+    return 1.79284291400159 - 0.85373472095314 * R;
+}
+
+float Snoise(vec3 V)
+{
+    const vec2 C = vec2(1.0 / 6.0, 1.0 / 3.0);
+    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+
+    vec3 I = floor(V + dot(V, C.yyy));
+    vec3 X0 = V - I + dot(I, C.xxx);
+
+    vec3 G = step(X0.yzx, X0.xyz);
+    vec3 L = 1.0 - G;
+    vec3 I1 = min(G.xyz, L.zxy);
+    vec3 I2 = max(G.xyz, L.zxy);
+
+    vec3 X1 = X0 - I1 + C.xxx;
+    vec3 X2 = X0 - I2 + C.yyy;
+    vec3 X3 = X0 - D.yyy;
+
+    I = Mod289(I);
+    vec4 P = Permute(Permute(Permute(I.z + vec4(0.0, I1.z, I2.z, 1.0)) + I.y + vec4(0.0, I1.y, I2.y, 1.0)) + I.x + vec4(0.0, I1.x, I2.x, 1.0));
+
+    float N = 0.142857142857;
+    vec3 Ns = N * D.wyz - D.xzx;
+
+    vec4 J = P - 49.0 * floor(P * Ns.z * Ns.z);
+
+    vec4 Xs = floor(J * Ns.z);
+    vec4 Ys = floor(J - 7.0 * Xs);
+
+    vec4 Xv = Xs * Ns.x + Ns.yyyy;
+    vec4 Yv = Ys * Ns.x + Ns.yyyy;
+    vec4 H = 1.0 - abs(Xv) - abs(Yv);
+
+    vec4 B0 = vec4(Xv.xy, Yv.xy);
+    vec4 B1 = vec4(Xv.zw, Yv.zw);
+
+    vec4 S0 = floor(B0) * 2.0 + 1.0;
+    vec4 S1 = floor(B1) * 2.0 + 1.0;
+    vec4 Sh = -step(H, vec4(0.0));
+
+    vec4 A0 = B0.xzyw + S0.xzyw * Sh.xxyy;
+    vec4 A1 = B1.xzyw + S1.xzyw * Sh.zzww;
+
+    vec3 P0 = vec3(A0.xy, H.x);
+    vec3 P1 = vec3(A0.zw, H.y);
+    vec3 P2 = vec3(A1.xy, H.z);
+    vec3 P3 = vec3(A1.zw, H.w);
+
+    vec4 Norm = TaylorInvSqrt(vec4(dot(P0, P0), dot(P1, P1), dot(P2, P2), dot(P3, P3)));
+    P0 *= Norm.x;
+    P1 *= Norm.y;
+    P2 *= Norm.z;
+    P3 *= Norm.w;
+
+    vec4 M = max(0.6 - vec4(dot(X0, X0), dot(X1, X1), dot(X2, X2), dot(X3, X3)), 0.0);
+    M = M * M;
+    return 42.0 * dot(M * M, vec4(dot(P0, X0), dot(P1, X1), dot(P2, X2), dot(P3, X3)));
+}
+
+vec3 CurlNoise(vec3 P)
+{
+    const float E = 0.1;
+
+    float N1 = Snoise(P + vec3(E, 0, 0));
+    float N2 = Snoise(P - vec3(E, 0, 0));
+    float N3 = Snoise(P + vec3(0, E, 0));
+    float N4 = Snoise(P - vec3(0, E, 0));
+    float N5 = Snoise(P + vec3(0, 0, E));
+    float N6 = Snoise(P - vec3(0, 0, E));
+
+    float X = (N4 - N3) - (N6 - N5);
+    float Y = (N6 - N5) - (N2 - N1);
+    float Z = (N2 - N1) - (N4 - N3);
+
+    return normalize(vec3(X, Y, Z));
+}
+
+vec3 FbmCurl(vec3 P, int Octaves)
+{
+    vec3 Result = vec3(0.0);
+    float Amplitude = 1.0;
+    float Frequency = 1.0;
+    float TotalAmplitude = 0.0;
+
+    for (int I = 0; I < Octaves; I++)
+    {
+        Result += Amplitude * CurlNoise(P * Frequency + uTime * 0.1);
+        TotalAmplitude += Amplitude;
+        Amplitude *= 0.5;
+        Frequency *= 2.0;
+    }
+
+    return Result / TotalAmplitude;
+}
+
+vec3 CalculateGravity()
+{
+    return vec3(0.0, uGravity, 0.0);
+}
+
+vec3 CalculateAttractionForce(vec3 Position)
+{
+    vec3 Force = vec3(0.0);
+
+    for (int I = 0; I < uNumberOfAttractors; I++)
+    {
+        vec3 Delta = Attractors[I].xyz - Position;
+        float Distance = length(Delta);
+        float Strength = Attractors[I].w * uAttractionStrength;
+
+        float Softening = 0.5;
+        float ForceMag = Strength / (Distance * Distance + Softening);
+
+        Force += normalize(Delta) * ForceMag;
+    }
+
+    return Force;
+}
+
+vec3 CalculateVortexForce(vec3 Position)
+{
+    vec3 ToCenter = -Position;
+    ToCenter.y = 0.0;
+
+    float Distance = length(ToCenter);
+    if (Distance < 0.01)
+        return vec3(0.0);
+
+    vec3 Tangent = normalize(cross(vec3(0.0, 1.0, 0.0), ToCenter));
+
+    float VortexMag = uVortexStrength / (Distance + 0.5);
+
+    vec3 Inward = normalize(ToCenter) * VortexMag * 0.3;
+
+    return Tangent * VortexMag + Inward;
+}
+
+vec3 CalculateTurbulenceForce(vec3 Position, uint Index)
+{
+    vec3 NoisePos = Position * 0.5 + vec3(uTime * 0.2, uTime * 0.15, uTime * 0.1);
+    NoisePos += float(Index) * 0.001;
+
+    return FbmCurl(NoisePos, 4) * uTurbulenceStrength;
+}
+
+vec3 CalculateRepulsionForce(vec3 Position, uint Index)
+{
+    float Distance = length(Position);
+    if (Distance < 0.5)
+    {
+        return normalize(Position) * uRepulsionStrength * (0.5 - Distance) * 2.0;
+    }
+    return vec3(0.0);
+}
+
+vec3 ApplyBoundaryForce(vec3 Position, vec3 Velocity)
+{
+    vec3 NewVelocity = Velocity;
+    float Boundary = uBoundarySize;
+
+    float PushStrength = 2.0;
+    float Margin = 0.5;
+
+    if (Position.x > Boundary - Margin)
+        NewVelocity.x -= PushStrength * (Position.x - (Boundary - Margin));
+    if (Position.x < -Boundary + Margin)
+        NewVelocity.x -= PushStrength * (Position.x - (-Boundary + Margin));
+
+    if (Position.y > Boundary - Margin)
+        NewVelocity.y -= PushStrength * (Position.y - (Boundary - Margin));
+    if (Position.y < -Boundary + Margin)
+        NewVelocity.y -= PushStrength * (Position.y - (-Boundary + Margin));
+
+    if (Position.z > Boundary - Margin)
+        NewVelocity.z -= PushStrength * (Position.z - (Boundary - Margin));
+    if (Position.z < -Boundary + Margin)
+        NewVelocity.z -= PushStrength * (Position.z - (-Boundary + Margin));
+
+    if (abs(Position.x) > Boundary)
+        NewVelocity.x *= -uBoundaryBounciness;
+    if (abs(Position.y) > Boundary)
+        NewVelocity.y *= -uBoundaryBounciness;
+    if (abs(Position.z) > Boundary)
+        NewVelocity.z *= -uBoundaryBounciness;
+
+    return NewVelocity;
+}
+
+vec3 CalculateBlackHoleForce(vec3 Position)
+{
+    vec3 ToCenter = -Position;
+    float Distance = length(ToCenter);
+
+    if (Distance < 0.1)
+    {
+        float Angle = Random(Position.xy + uTime) * 6.28318;
+        return vec3(cos(Angle), 0.5, sin(Angle)) * 5.0;
+    }
+
+    vec3 Inward = normalize(ToCenter);
+    vec3 Tangent = normalize(cross(vec3(0.0, 1.0, 0.0), Inward));
+
+    float PullStrength = uAttractionStrength * 3.0 / (Distance * Distance + 0.1);
+    float SpiralStrength = uVortexStrength * 2.0 / (Distance + 0.5);
+
+    return Inward * PullStrength + Tangent * SpiralStrength;
+}
+
+void main(void)
+{
+    uint Index = gl_GlobalInvocationID.x;
+
+    vec3 InitialPosition = InitialPositions[Index].xyz;
+    vec3 Velocity = Velocities[Index].xyz;
+    vec3 Position = Positions[Index].xyz;
+    vec4 PData = ParticleData[Index];
+
+    float Age = PData.x;
+    float MaxAge = PData.y;
+    float Size = PData.z;
+    float Type = PData.w;
+
+    Age += uDt;
+
+    vec3 TotalForce = vec3(0.0);
+
+    if (uApplyAttractionForce)
+    {
+        if (uSimulationMode == MODE_BLACKHOLE)
+        {
+            TotalForce += CalculateBlackHoleForce(Position);
+        }
+        else
+        {
+            TotalForce += CalculateAttractionForce(Position);
+        }
+
+        if (uEnableGravity)
+        {
+            TotalForce += CalculateGravity();
+        }
+
+        if (uEnableVortex)
+        {
+            TotalForce += CalculateVortexForce(Position);
+        }
+
+        if (uEnableTurbulence)
+        {
+            TotalForce += CalculateTurbulenceForce(Position, Index);
+        }
+
+        if (uSimulationMode == MODE_SWARM)
+        {
+            TotalForce += CalculateRepulsionForce(Position, Index);
+        }
+
+        Velocity += TotalForce * uDt;
+
+        Velocity *= uDamping;
+
+        float MaxSpeed = 10.0;
+        float Speed = length(Velocity);
+        if (Speed > MaxSpeed)
+        {
+            Velocity = normalize(Velocity) * MaxSpeed;
+        }
+
+        Position += Velocity * uDt;
+
+        if (uEnableBoundary)
+        {
+            Velocity = ApplyBoundaryForce(Position, Velocity);
+
+            Position = clamp(Position, vec3(-uBoundarySize), vec3(uBoundarySize));
+        }
+
+        if (uSimulationMode == MODE_FIREWORKS)
+        {
+            if (Age > MaxAge)
+            {
+                float Rx = Random(vec2(float(Index), uTime)) * 2.0 - 1.0;
+                float Rz = Random(vec2(uTime, float(Index))) * 2.0 - 1.0;
+                Position = vec3(Rx * 2.0, 3.0, Rz * 2.0);
+
+                float Angle = Random(Position.xy) * 6.28318;
+                float UpAngle = Random(Position.yz) * 1.57;
+                float FireworkSpeed = 2.0 + Random(Position.xz) * 3.0;
+                Velocity = vec3(cos(Angle) * cos(UpAngle) * FireworkSpeed, sin(UpAngle) * FireworkSpeed, sin(Angle) * cos(UpAngle) * FireworkSpeed);
+
+                Age = 0.0;
+                MaxAge = 2.0 + Random(Position.xy + uTime) * 3.0;
+            }
+        }
+    }
+    else
+    {
+        vec3 Delta = InitialPosition - Position;
+        float Distance = length(Delta);
+
+        float SpringConstant = 2.0;
+        float DampingFactor = 0.9;
+
+        Velocity = Delta * SpringConstant;
+        Velocity *= DampingFactor;
+
+        Position += Velocity * uDt;
+
+        if (Distance < 0.01)
+        {
+            Position = InitialPosition;
+            Velocity = vec3(0.0);
+        }
+    }
+
+    float DynamicSize = Size * (0.8 + 0.4 * clamp(length(Velocity) * 0.5, 0.0, 1.0));
+
+    Velocities[Index] = vec4(Velocity, 1.0);
+    Positions[Index] = vec4(Position, 1.0);
+    ParticleData[Index] = vec4(Age, MaxAge, DynamicSize, Type);
+}

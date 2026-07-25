@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+    <file>Resources/Shaders/PointCloud.vert</file>
+    <file>Resources/Shaders/PointCloud.frag</file>
+    <file>Resources/Shaders/ParticleSimulation.comp</file>
+    </qresource>
+</RCC>
