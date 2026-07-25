@@ -46,9 +46,9 @@
     } \
 \
   public: \
-    inline void Set##NAME(TYPE* Ptr) \
+    inline void Set##NAME(TYPE* pPtr) \
     { \
-        m##NAME = Ptr; \
+        m##NAME = pPtr; \
     }
 
 // Define member pointer constant

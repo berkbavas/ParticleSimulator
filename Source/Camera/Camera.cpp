@@ -25,11 +25,11 @@ QVector3D ParticleSimulator::Camera::ComputeRayFromScreen(const QPointF &Point) 
     return WorldPosition;
 }
 
-QVector2D ParticleSimulator::Camera::ProjectWorldToScreenSpace(const QVector3D &Pos3D) const
+QVector2D ParticleSimulator::Camera::ProjectWorldToScreenSpace(const QVector3D &Position) const
 {
     QMatrix4x4 ViewProjectionMatrix = GetViewProjectionMatrix();
 
-    QVector4D ClipSpacePos = ViewProjectionMatrix * QVector4D(Pos3D, 1.0f);
+    QVector4D ClipSpacePos = ViewProjectionMatrix * QVector4D(Position, 1.0f);
 
     if (ClipSpacePos.w() == 0.0f)
     {

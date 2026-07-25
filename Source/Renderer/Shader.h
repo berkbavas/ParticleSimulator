@@ -60,13 +60,13 @@ namespace ParticleSimulator
             }
         }
 
-        void SetUniformArray(const QString& Name, const GLfloat* Values, int Count, int TupleSize)
+        void SetUniformArray(const QString& Name, const GLfloat* pValues, int Count, int TupleSize)
         {
             const auto Location = mProgram->uniformLocation(Name);
 
-            if (0 <= Location)
+            if (MINIMUM_VALID_LOCATION <= Location)
             {
-                mProgram->setUniformValueArray(Location, Values, Count, TupleSize);
+                mProgram->setUniformValueArray(Location, pValues, Count, TupleSize);
             }
             else
             {

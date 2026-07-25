@@ -141,14 +141,14 @@ bool ParticleSimulator::Math::IntersectRayPlane(const QVector3D& RayOrigin, cons
         return false;
     }
 
-    float t = QVector3D::dotProduct(PlanePoint - RayOrigin, PlaneNormal) / Denom;
-    if (t < 0)
+    float T = QVector3D::dotProduct(PlanePoint - RayOrigin, PlaneNormal) / Denom;
+    if (T < 0)
     {
         // Intersection point is behind the ray origin
         return false;
     }
 
-    IntersectionPoint = RayOrigin + t * RayDir;
+    IntersectionPoint = RayOrigin + T * RayDir;
     return true;
 }
 
