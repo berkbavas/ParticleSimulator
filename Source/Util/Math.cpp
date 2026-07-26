@@ -180,7 +180,7 @@ bool ParticleSimulator::Math::IntersectRaySphere(const QVector3D& RayOrigin, con
 
 float ParticleSimulator::Math::GenerateRandom(float LowerBound, float UpperBound)
 {
-    return LowerBound + (UpperBound - LowerBound) * RANDOM_GENERATOR.generateDouble();
+    return LowerBound + (UpperBound - LowerBound) * mRandomGenerator.generateDouble();
 }
 
-QRandomGenerator ParticleSimulator::Math::RANDOM_GENERATOR = QRandomGenerator();
+QRandomGenerator ParticleSimulator::Math::mRandomGenerator = QRandomGenerator();

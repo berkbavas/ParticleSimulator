@@ -32,31 +32,8 @@ namespace ParticleSimulator
         static bool IsLogEnabledFor(LogLevel LogLevel);
         static LogLevel GetLogLevel();
         static std::string GetTimeString();
-
         static void QtMessageOutputCallback(QtMsgType Type, const QMessageLogContext& Context, const QString& Message);
-
-        inline static std::string GetLogLevelString(LogLevel Level)
-        {
-            switch (Level)
-            {
-            case LogLevel::ALL:
-                return "ALL";
-            case LogLevel::NONE:
-                return "NONE";
-            case LogLevel::TRACE:
-                return "TRACE";
-            case LogLevel::DEBUG:
-                return "DEBUG";
-            case LogLevel::INFO:
-                return "INFO";
-            case LogLevel::WARNING:
-                return "WARN";
-            case LogLevel::FATAL:
-                return "FATAL";
-            default:
-                return "N/A";
-            }
-        }
+        static std::string GetLogLevelString(LogLevel Level);
 
       private:
         static LogLevel mLogLevel;

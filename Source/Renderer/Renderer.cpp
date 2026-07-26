@@ -35,7 +35,7 @@ void ParticleSimulator::Renderer::Run()
 
     qInstallMessageHandler(ParticleSimulator::Logger::QtMessageOutputCallback);
 
-    mWindow->showMinimized();
+    mWindow->showMaximized();
 }
 
 void ParticleSimulator::Renderer::Initialize()
@@ -53,8 +53,6 @@ void ParticleSimulator::Renderer::Initialize()
     mPointCloudShader->Initialize();
 
     QtImGui::initialize(mWindow, true);
-
-    mWindow->showMaximized();
 }
 
 void ParticleSimulator::Renderer::Resize(int Width, int Height)
@@ -68,9 +66,9 @@ void ParticleSimulator::Renderer::Resize(int Width, int Height)
 
 void ParticleSimulator::Renderer::Render(float Ifps)
 {
-    mCamera->Update(Ifps);
-
     mTime += Ifps * mSpeed;
+
+    mCamera->Update(Ifps);
 
     mParticleSimulation->Update(Ifps * mSpeed);
 

@@ -43,6 +43,6 @@ namespace ParticleSimulator
             }
         }
 
-        static QRandomGenerator RANDOM_GENERATOR;
+        static QRandomGenerator mRandomGenerator;
     };
 }

@@ -65,6 +65,29 @@ void ParticleSimulator::Logger::QtMessageOutputCallback(QtMsgType Type, const QM
     }
 }
 
+std::string ParticleSimulator::Logger::GetLogLevelString(LogLevel Level)
+{
+    switch (Level)
+    {
+    case LogLevel::ALL:
+        return "ALL";
+    case LogLevel::NONE:
+        return "NONE";
+    case LogLevel::TRACE:
+        return "TRACE";
+    case LogLevel::DEBUG:
+        return "DEBUG";
+    case LogLevel::INFO:
+        return "INFO";
+    case LogLevel::WARNING:
+        return "WARN";
+    case LogLevel::FATAL:
+        return "FATAL";
+    default:
+        return "N/A";
+    }
+}
+
 bool ParticleSimulator::Logger::IsLogEnabledFor(LogLevel LogLevel)
 {
     return mLogLevel <= LogLevel;
